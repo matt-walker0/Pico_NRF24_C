@@ -9,7 +9,7 @@
 RF24 radio; // instantiate an object for the nrf24L01 transceiver
 
 // Return true if setup correctly
-bool nrf24Init(uint8_t address[][6], uint8_t SPI_BUS, uint8_t SCK_PIN, uint8_t TX_PIN, uint8_t RX_PIN, uint8_t CE_PIN, uint8_t CSN_PIN) {
+bool nrf24Init(uint8_t address[2][6], uint8_t SPI_BUS, uint8_t SCK_PIN, uint8_t TX_PIN, uint8_t RX_PIN, uint8_t CE_PIN, uint8_t CSN_PIN) {
     
     if(SPI_BUS == 0) {
         spi.begin(spi0, SCK_PIN, TX_PIN, RX_PIN);        // Setup SPI bus
@@ -19,7 +19,9 @@ bool nrf24Init(uint8_t address[][6], uint8_t SPI_BUS, uint8_t SCK_PIN, uint8_t T
     }
     else { return (false); } // Unknown SPI bus
 
-    radio.begin(&spi, CE_PIN, CSN_PIN);     // Setup and configure rf radio
+    if(radio.begin(&spi, CE_PIN, CSN_PIN) == false) {     // Setup and configure rf radio
+        return(false);
+    }
     radio.setAutoAck(1);                    // Ensure ACK is enabled
     radio.setRetries(2,15);                 // delay, max no. of retries
     radio.setPayloadSize(5);                // Here we are sending 1-byte payloads to test the call-response speed
