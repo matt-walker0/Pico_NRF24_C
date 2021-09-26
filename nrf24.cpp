@@ -9,17 +9,17 @@
 RF24 radio; // instantiate an object for the nrf24L01 transceiver
 
 // Return true if setup correctly
-bool nrf24Init(uint8_t address[2][6], uint8_t SPI_BUS, uint8_t SCK_PIN, uint8_t TX_PIN, uint8_t RX_PIN, uint8_t CE_PIN, uint8_t CSN_PIN) {
+bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
     
-    if(SPI_BUS == 0) {
-        spi.begin(spi0, SCK_PIN, TX_PIN, RX_PIN);        // Setup SPI bus
+    if(spi_bus == 0) {
+        spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
     }
-    else if(SPI_BUS == 1) {
-        spi.begin(spi1, SCK_PIN, TX_PIN, RX_PIN);        // Setup SPI bus
+    else if(spi_bus == 1) {
+        spi.begin(spi1, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
     }
     else { return (false); } // Unknown SPI bus
 
-    if(radio.begin(&spi, CE_PIN, CSN_PIN) == false) {     // Setup and configure rf radio
+    if(radio.begin(&spi, ce_pin, csn_pin) == false) {     // Setup and configure rf radio
         return(false);
     }
     radio.setAutoAck(1);                    // Ensure ACK is enabled
