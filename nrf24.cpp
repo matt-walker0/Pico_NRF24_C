@@ -35,6 +35,13 @@ void nrf24TestRadio() {
     radio.printDetails();                   // Dump the configuration of the rf unit for debugging
 }
 
+bool nrf24HasNewData() {
+     if(radio.available() == true) {  // if there is data in the RX FIFO
+        return(true);
+     }
+    return(false);
+}
+
 // Return true if ack_rec
 bool nrf24SendData(uint8_t buffer[5]) {
     bool ack_rec = radio.write(buffer, 5);
@@ -45,7 +52,7 @@ bool nrf24SendData(uint8_t buffer[5]) {
 }
 
 // Modifies buffer with RX data, return true if new data appended.
-bool nrf24ReadData(uint8_t buffer[5]) {
+void nrf24ReadData(uint8_t buffer[5]) {
     if(radio.available() == true) {  // if there is data in the RX FIFO
         radio.read(&buffer, 5); // this clears the RX FIFO      
         return(true);
