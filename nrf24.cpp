@@ -55,9 +55,7 @@ bool nrf24SendData(uint8_t buffer[5]) {
 void nrf24ReadData(uint8_t buffer[5]) {
     if(radio.available() == true) {  // if there is data in the RX FIFO
         radio.read(&buffer, 5); // this clears the RX FIFO      
-        return(true);
-    }                
-    else { return(false); }
+    } 
 }
 
 // Returns true if new RX data available
