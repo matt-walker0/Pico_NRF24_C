@@ -42,11 +42,10 @@ bool nrf24HasNewData() {
     return(false);
 }
 
+// Assumes, stop listen prior to run.
 // Return true if ack_rec
 bool nrf24SendData(uint8_t buffer[5]) {
-    radio.stopListening(); // Stop listening while we TX
     bool ack_rec = radio.write(buffer, 5);
-    radio.startListening();         
 
     if (ack_rec == true) {
         return(true);
@@ -56,11 +55,20 @@ bool nrf24SendData(uint8_t buffer[5]) {
     }
 }
 
-// Modifies buffer with RX data, return true if new data appended.
+// Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
+// True returned if read data, false if ground or something
 void nrf24ReadData(uint8_t buffer[5]) {
     if(radio.available() == true) {  // if there is data in the RX FIFO
         radio.read(&buffer, 5); // this clears the RX FIFO      
     } 
+}
+
+void nrf24StartListening() {
+    radio.startListening();
+}
+
+void nrf24StopListening() {
+    radio.stopListening();
 }
 
 // Returns true if new RX data available
