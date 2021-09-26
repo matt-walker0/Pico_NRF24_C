@@ -27,7 +27,7 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     radio.setPayloadSize(5);                // Here we are sending 1-byte payloads to test the call-response speed
     radio.openWritingPipe(address[1]);      // Both radios listen on the same pipes by default, and switch when writing
     radio.openReadingPipe(1,address[0]);
-    radio.startListening();                 // Start listening
+    radio.startListening();    
     return(true);
 }
 
@@ -44,11 +44,16 @@ bool nrf24HasNewData() {
 
 // Return true if ack_rec
 bool nrf24SendData(uint8_t buffer[5]) {
+    radio.stopListening(); // Stop listening while we TX
     bool ack_rec = radio.write(buffer, 5);
+    radio.startListening();         
+
     if (ack_rec == true) {
         return(true);
     }
-    else { return (false); }
+    else { 
+        return(false); 
+    }
 }
 
 // Modifies buffer with RX data, return true if new data appended.
