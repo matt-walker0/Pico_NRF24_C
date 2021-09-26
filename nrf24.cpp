@@ -2,9 +2,13 @@
 #include "pico/stdlib.h"
 #include <RF24.h>         // rf24 radio object
 #include "nrf24.h"
+#include "hardware/gpio.h"
 
 // NRF24 C WRAPPER: Used to call nrf24 common operations from C
 // Expects to be in a project with RF24 included as library. Defined in main CMakeLists.txt
+
+// Local functions
+void nrf24InterruptHandle(uint gpio, uint32_t events);
 
 RF24 radio; // instantiate an object for the nrf24L01 transceiver
 
@@ -29,6 +33,12 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     radio.openReadingPipe(1,address[0]);
     radio.startListening();    
     return(true);
+}
+
+// Calls nrf24InterruptHandle on IRQ pin falling
+void nrf24SetupIRQ(uint8_t irq_pin, void (*irq_handler) (uint gpio, uint32_t event)) {
+    gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
+
 }
 
 void nrf24TestRadio() {
@@ -63,23 +73,24 @@ void nrf24ReadData(uint8_t buffer[5]) {
     } 
 }
 
+
+// Returns true if new RX data available
+void nrf24InterruptHandle(uint gpio, uint32_t events) {
+    bool tx_ok, tx_fail, rx_ready;           
+    radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
+
+    if(rx_ready == true) { // new rx data
+        //return(true);
+    }
+    else {
+        //return(false); // either tx was ok or tx failed
+    }
+}
+
 void nrf24StartListening() {
     radio.startListening();
 }
 
 void nrf24StopListening() {
     radio.stopListening();
-}
-
-// Returns true if new RX data available
-bool nrf24InterruptHandle() {
-    bool tx_ok, tx_fail, rx_ready;           
-    radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
-
-    if(rx_ready == true) { // new rx data
-        return(true);
-    }
-    else {
-        return(false); // either tx was ok or tx failed
-    }
 }
