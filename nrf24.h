@@ -1,3 +1,6 @@
+#ifndef nrf24_included
+#define nrf24_included
+
 #ifdef __cplusplus
 extern "C" 
 {
@@ -11,7 +14,11 @@ void nrf24ReadData(uint8_t buffer[5]);
 void nrf24TestRadio();
 void nrf24StartListening();
 void nrf24StopListening();
+void nrf24LowPWR();
+void nrf24MaxPWR();
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif
