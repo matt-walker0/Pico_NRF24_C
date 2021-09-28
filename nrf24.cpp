@@ -14,7 +14,7 @@ RF24 radio; // instantiate an object for the nrf24L01 transceiver
 
 // Return true if setup correctly
 bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
-    
+    printf("%d %d %d %d %d %d ", spi_bus, sck_pin,  tx_pin, rx_pin, ce_pin, csn_pin);
     if(spi_bus == 0) {
         spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
     }
@@ -24,8 +24,11 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     else { return (false); } // Unknown SPI bus
 
     if(radio.begin(&spi, ce_pin, csn_pin) == false) {     // Setup and configure rf radio
+        printf("BAD SETUP");
         return(false);
     }
+    printf("  %d  chip\n",radio.isChipConnected());
+    radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
     radio.setAutoAck(1);                    // Ensure ACK is enabled
     radio.setRetries(2,15);                 // delay, max no. of retries
     radio.setPayloadSize(5);                // Here we are sending 1-byte payloads to test the call-response speed
@@ -33,6 +36,15 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     radio.openReadingPipe(1,address[0]);
     radio.startListening();    
     return(true);
+}
+
+void nrf24LowPWR() {
+    radio.setPALevel(RF24_PA_LOW);
+}
+
+
+void nrf24MaxPWR() {
+    radio.setPALevel(RF24_PA_MAX);
 }
 
 // Calls nrf24InterruptHandle on IRQ pin falling
@@ -68,8 +80,11 @@ bool nrf24SendData(uint8_t buffer[5]) {
 // Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
 // True returned if read data, false if ground or something
 void nrf24ReadData(uint8_t buffer[5]) {
+    //printf("Before read\n");
     if(radio.available() == true) {  // if there is data in the RX FIFO
         radio.read(&buffer, 5); // this clears the RX FIFO      
+        //printf("AFTER: ");
+        //printf("%x %x %x %x %x \n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4]);
     } 
 }
 
@@ -94,3 +109,4 @@ void nrf24StartListening() {
 void nrf24StopListening() {
     radio.stopListening();
 }
+
