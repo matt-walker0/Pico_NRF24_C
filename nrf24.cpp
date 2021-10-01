@@ -7,10 +7,9 @@
 // NRF24 C WRAPPER: Used to call nrf24 common operations from C
 // Expects to be in a project with RF24 included as library. Defined in main CMakeLists.txt
 
-// Local functions
-void nrf24InterruptHandle(uint gpio, uint32_t events);
 
 RF24 radio; // instantiate an object for the nrf24L01 transceiver
+
 
 // Return true if setup correctly
 bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
@@ -24,10 +23,8 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     else { return (false); } // Unknown SPI bus
 
     if(radio.begin(&spi, ce_pin, csn_pin) == false) {     // Setup and configure rf radio
-        printf("BAD SETUP");
         return(false);
     }
-    printf("  %d  chip\n",radio.isChipConnected());
     radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
     radio.setAutoAck(1);                    // Ensure ACK is enabled
     radio.setRetries(2,15);                 // delay, max no. of retries
@@ -38,25 +35,15 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     return(true);
 }
 
-void nrf24LowPWR() {
-    radio.setPALevel(RF24_PA_LOW);
-}
 
-
-void nrf24MaxPWR() {
-    radio.setPALevel(RF24_PA_MAX);
-}
-
-// Calls nrf24InterruptHandle on IRQ pin falling
+// Allows for function to be inserted for call on IRQ falling
 void nrf24SetupIRQ(uint8_t irq_pin, void (*irq_handler) (uint gpio, uint32_t event)) {
     gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
 
 }
 
-void nrf24TestRadio() {
-    radio.printDetails();                   // Dump the configuration of the rf unit for debugging
-}
 
+// Returns true if RX is available
 bool nrf24HasNewData() {
      if(radio.available() == true) {  // if there is data in the RX FIFO
         return(true);
@@ -64,8 +51,7 @@ bool nrf24HasNewData() {
     return(false);
 }
 
-// Assumes, stop listen prior to run.
-// Return true if ack_rec
+// Assumes, stop listen prior to run. Return true if ack_rec
 bool nrf24SendData(uint8_t buffer[5]) {
     bool ack_rec = radio.write(buffer, 5);
 
@@ -90,23 +76,44 @@ void nrf24ReadData(uint8_t buffer[5]) {
 
 
 // Returns true if new RX data available
-void nrf24InterruptHandle(uint gpio, uint32_t events) {
+uint8_t nrf24InterruptHandle() {
     bool tx_ok, tx_fail, rx_ready;           
     radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
 
     if(rx_ready == true) { // new rx data
-        //return(true);
+        return(NRF24_RX_READY);
     }
-    else {
-        //return(false); // either tx was ok or tx failed
+    else if(tx_ok == true) {
+        return(NRF24_TX_OK);
     }
+    else if(tx_fail == true) {
+         return(NRF24_TX_FAIL);       
+    }
+    return(NRF24_NONE);
 }
 
+
+// Start listening
 void nrf24StartListening() {
     radio.startListening();
 }
 
+// Stop listening
 void nrf24StopListening() {
     radio.stopListening();
 }
 
+// Radio to low power, useful when next to each other
+void nrf24LowPWR() {
+    radio.setPALevel(RF24_PA_LOW);
+}
+
+// Radio to max power
+void nrf24MaxPWR() {
+    radio.setPALevel(RF24_PA_MAX);
+}
+
+// Prints to details of radio
+void nrf24TestRadio() {
+    radio.printDetails(); // Dump the configuration of the rf unit for debugging
+}
