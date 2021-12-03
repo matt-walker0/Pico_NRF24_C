@@ -27,7 +27,6 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     }
     radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
     radio.setAutoAck(1);                    // Ensure ACK is enabled
-    radio.setRetries(2,15);                 // delay, max no. of retries
     radio.setPayloadSize(5);                // Here we are sending 1-byte payloads to test the call-response speed
     radio.openWritingPipe(address[1]);      // Both radios listen on the same pipes by default, and switch when writing
     radio.openReadingPipe(1,address[0]);
@@ -36,10 +35,15 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
 }
 
 
-// Allows for function to be inserted for call on IRQ falling
-void nrf24SetupIRQ(uint8_t irq_pin, void (*irq_handler) (uint gpio, uint32_t event)) {
-    gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
+// Change num. retries allowed and time interval multiples of 250us
+void nrf24NumberRetries(uint8_t count, uint8_t time_interval) {
+    radio.setRetries(time_interval, count);               
+}
 
+// Allows for function to be inserted for call on IRQ falling
+void nrf24SetupIRQ(uint8_t irq_pin, void (*irq_handler)(uint gpio, uint32_t event) ) {
+    radio.maskIRQ(1,1,0);
+    gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
 }
 
 
@@ -51,16 +55,13 @@ bool nrf24HasNewData() {
     return(false);
 }
 
-// Assumes, stop listen prior to run. Return true if ack_rec
-bool nrf24SendData(uint8_t buffer[5]) {
-    bool ack_rec = radio.write(buffer, 5);
-
-    if (ack_rec == true) {
-        return(true);
-    }
-    else { 
-        return(false); 
-    }
+// Assumes stop-listen prior to run. Return true if ack_rec
+bool nrf24SendData(uint8_t buffer[], uint8_t len = 5) {
+     uint8_t temp_buff[5] = {1,2,3,4,5};
+     // LED ON statement here works!
+     bool result = radio.write(&temp_buff, 5);
+     // LED ON statement here doesnt =/
+     return result;
 }
 
 // Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
@@ -68,28 +69,22 @@ bool nrf24SendData(uint8_t buffer[5]) {
 void nrf24ReadData(uint8_t buffer[5]) {
     //printf("Before read\n");
     if(radio.available() == true) {  // if there is data in the RX FIFO
-        radio.read(&buffer, 5); // this clears the RX FIFO      
+        radio.read(buffer, 5); // this clears the RX FIFO      
         //printf("AFTER: ");
         //printf("%x %x %x %x %x \n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4]);
     } 
 }
 
 
-// Returns true if new RX data available
-uint8_t nrf24InterruptHandle() {
-    bool tx_ok, tx_fail, rx_ready;           
+// Returns true if new RX data available (other IRQ's can lead to race conditions)
+bool nrf24NewDataIRQ() {
+    bool tx_ok, tx_fail, rx_ready;      
     radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
 
     if(rx_ready == true) { // new rx data
-        return(NRF24_RX_READY);
+        return(true);
     }
-    else if(tx_ok == true) {
-        return(NRF24_TX_OK);
-    }
-    else if(tx_fail == true) {
-         return(NRF24_TX_FAIL);       
-    }
-    return(NRF24_NONE);
+    return(false);
 }
 
 
