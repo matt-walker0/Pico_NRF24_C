@@ -56,28 +56,23 @@ bool nrf24HasNewData() {
 }
 
 // Assumes stop-listen prior to run. Return true if ack_rec
-bool nrf24SendData(uint8_t buffer[], uint8_t len = 5) {
-     uint8_t temp_buff[5] = {1,2,3,4,5};
-     // LED ON statement here works!
-     bool result = radio.write(&temp_buff, 5);
-     // LED ON statement here doesnt =/
+bool nrf24SendData(uint8_t buffer[], uint8_t len) {
+     bool result = radio.write(buffer, 5);
      return result;
 }
 
 // Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
 // True returned if read data, false if ground or something
-void nrf24ReadData(uint8_t buffer[5]) {
-    //printf("Before read\n");
+void nrf24ReadData(uint8_t buffer[], uint8_t len) {
     if(radio.available() == true) {  // if there is data in the RX FIFO
         radio.read(buffer, 5); // this clears the RX FIFO      
-        //printf("AFTER: ");
-        //printf("%x %x %x %x %x \n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4]);
+        printf("BUFF:  %d,%d,%d,%d,%d\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4]);
     } 
 }
 
 
 // Returns true if new RX data available (other IRQ's can lead to race conditions)
-bool nrf24NewDataIRQ() {
+bool nrf24RxIRQ() {
     bool tx_ok, tx_fail, rx_ready;      
     radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
 
