@@ -4,8 +4,8 @@
 #include "nrf24.h"
 #include "hardware/gpio.h"
 
-// NRF24 C WRAPPER: Used to call nrf24 common operations from C
-// Expects to be in a project with RF24 included as library. Defined in main CMakeLists.txt
+// NRF24 C WRAPPER: Used to call nrf24 common operations from C.
+// Expects to be in a project with RF24 included in target_link_libraries. Defined in main CMakeLists.txt
 
 
 RF24 radio; // instantiate an object for the nrf24L01 transceiver
