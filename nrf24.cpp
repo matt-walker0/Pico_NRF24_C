@@ -27,13 +27,16 @@ bool nrf24Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t 
     }
     radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
     radio.setAutoAck(1);                    // Ensure ACK is enabled
-    radio.setPayloadSize(5);                // Here we are sending 1-byte payloads to test the call-response speed
     radio.openWritingPipe(address[1]);      // Both radios listen on the same pipes by default, and switch when writing
     radio.openReadingPipe(1,address[0]);
     radio.startListening();    
     return(true);
 }
 
+// Set payload size (no. bytes)
+void nrf24PayloadLength(uint8_t len) {
+    radio.setPayloadSize(len);                // Here we are sending 1-byte payloads to test the call-response speed
+}
 
 // Change num. retries allowed and time interval multiples of 250us
 void nrf24NumberRetries(uint8_t count, uint8_t time_interval) {
@@ -46,7 +49,6 @@ void nrf24SetupIRQ(uint8_t irq_pin, void (*irq_handler)(uint gpio, uint32_t even
     gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
 }
 
-
 // Returns true if RX is available
 bool nrf24HasNewData() {
      if(radio.available() == true) {  // if there is data in the RX FIFO
@@ -57,16 +59,15 @@ bool nrf24HasNewData() {
 
 // Assumes stop-listen prior to run. Return true if ack_rec
 bool nrf24SendData(uint8_t buffer[], uint8_t len) {
-     bool result = radio.write(buffer, 5);
-     return result;
+    bool ack_rec = radio.write(buffer, len);
+    return ack_rec;
 }
 
 // Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
 // True returned if read data, false if ground or something
 void nrf24ReadData(uint8_t buffer[], uint8_t len) {
     if(radio.available() == true) {  // if there is data in the RX FIFO
-        radio.read(buffer, 5); // this clears the RX FIFO      
-        printf("BUFF:  %d,%d,%d,%d,%d\n",buffer[0],buffer[1],buffer[2],buffer[3],buffer[4]);
+        radio.read(buffer, len); // this clears the RX FIFO      
     } 
 }
 
@@ -81,7 +82,6 @@ bool nrf24RxIRQ() {
     }
     return(false);
 }
-
 
 // Start listening
 void nrf24StartListening() {
@@ -107,3 +107,4 @@ void nrf24MaxPWR() {
 void nrf24TestRadio() {
     radio.printDetails(); // Dump the configuration of the rf unit for debugging
 }
+
