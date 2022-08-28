@@ -14,7 +14,6 @@ RF24 radio; // instantiate an object for the RF24 transceiver
 // Return true if setup correctly
 // Defaults: 250KBPS, Auto-Ack enabled, starts listening.
 bool NRF24_Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
-    printf("%d %d %d %d %d %d ", spi_bus, sck_pin,  tx_pin, rx_pin, ce_pin, csn_pin);
     if(spi_bus == 0) {
         spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
     }
