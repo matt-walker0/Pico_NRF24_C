@@ -12,7 +12,7 @@ RF24 radio; // instantiate an object for the RF24 transceiver
 
 
 // Return true if setup correctly
-// Defaults: 250KBPS, Auto-Ack enabled, starts listening.
+// Defaults: 250KBPS, auto-ack enabled, dynamic payloads enabled, starts in listening mode.
 bool NRF24_Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
     if(spi_bus == 0) {
         spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
@@ -27,15 +27,28 @@ bool NRF24_Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t
     }
     radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
     radio.setAutoAck(1);                    // Ensure ACK is enabled
+    radio.enableDynamicPayloads();          // Dynamic payloads are the way to go.
     radio.openWritingPipe(address[1]);      // Both radios listen on the same pipes by default, and switch when writing
     radio.openReadingPipe(1,address[0]);
     radio.startListening();    
     return(true);
 }
 
-// Set payload size upto 32 bytes
+
+// Set payload size upto 32 bytes. Applies to non-dynamic length payloads.
 void NRF24_PayloadLength(uint8_t len) {
     radio.setPayloadSize(len);               
+}
+
+// Set ON/OFF dynamic payloads.
+void NRF24_DynamicPayloads(bool enabled) {
+    if(enabled) {
+        radio.enableDynamicPayloads();
+    }
+    else {
+        radio.disableDynamicPayloads();
+    }
+
 }
 
 // True for acknowledgement packets.
@@ -56,10 +69,7 @@ void NRF24_SetupIRQ(uint8_t irq_pin, void (*irq_handler)(uint gpio, uint32_t eve
 
 // Returns true if RX is available
 bool NRF24_HasNewData() {
-     if(radio.available() == true) {  // if there is data in the RX FIFO
-        return(true);
-     }
-    return(false);
+    return(radio.available());
 }
 
 // Assumes stop-listen prior to run. Return true if ack_rec
@@ -68,16 +78,15 @@ bool NRF24_SendData(uint8_t buffer[], uint8_t len) {
     return ack_rec;
 }
 
-// Modifies buffer with RX data, ignore_ground stops 0 ID messages from pickup.
-// True returned if read data, false if ground or something
+// Modifies buffer with RX data, only to be called if buffer contains waiting message.
+// If buff is greater than payload size either parts of next message will be added,
+// or last byte will be padded until end of buffer.
+// More detail here: https://nrf24.github.io/RF24/classRF24.html#a8e2eacacfba96426c192066f04054c5b
 void NRF24_ReadData(uint8_t buffer[], uint8_t len) {
-    if(radio.available() == true) {  // if there is data in the RX FIFO
-        radio.read(buffer, len); // this clears the RX FIFO      
-    } 
+    radio.read(buffer, len); // this clears the RX FIFO
 }
 
-
-// Returns true if new RX data available (other IRQ's can lead to race conditions)
+// Returns true if new RX data available.
 bool NRF24_RxIRQ() {
     bool tx_ok, tx_fail, rx_ready;      
     radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
