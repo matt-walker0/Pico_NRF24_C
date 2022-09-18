@@ -8,6 +8,7 @@ extern "C"
 
 bool NRF24_Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin);
 void NRF24_PayloadLength(uint8_t len);
+void NRF24_DynamicPayloads(bool enabled);
 void NRF24_AckEnabled(bool enabled);
 void NRF24_NumberRetries(uint8_t count, uint8_t time_interval);
 void NRF24_SetupIRQ(uint8_t irq_pin, void (*irq_handler) (uint gpio, uint32_t event));
