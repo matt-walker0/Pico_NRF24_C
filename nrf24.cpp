@@ -28,12 +28,12 @@ bool NRF24_Init(spi_inst_t *spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx
 }
 
 // Writing pipe wrapper.
-void NRF24_OpenWritingPipe(uint8_t addr[6]) {
+void NRF24_OpenWritingPipe(uint64_t addr) {
     radio.openWritingPipe(addr);
 }
 
 // Reading pipe wrapper.
-void NRF24_OpenReadingPipe(uint8_t pipe_num, uint8_t addr[6]) {
+void NRF24_OpenReadingPipe(uint8_t pipe_num, uint64_t addr) {
     radio.openReadingPipe(pipe_num, addr);
 }
 
