@@ -16,7 +16,7 @@ RF24 radio; // instantiate an object for the RF24 transceiver
 // Return TRUE if setup correctly.
 // Defaults: 250KBPS, dynamic payloads, and listening mode.
 bool NRF24_Init(spi_inst_t *spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
-    spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
+    spi.begin(spi_bus, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
  
     if(radio.begin(&spi, ce_pin, csn_pin) == false) {     // Setup and configure rf radio
         return(false);
