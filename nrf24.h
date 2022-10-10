@@ -1,6 +1,9 @@
 #ifndef nrf24_pico_c_header
 #define nrf24_pico_c_header
 
+#include "hardware/spi.h" // Needed to recognise spi_inst as a type.
+
+
 #ifdef __cplusplus
 extern "C" 
 {
@@ -8,7 +11,7 @@ extern "C"
 
 // Return TRUE if setup correctly
 // Defaults: 250KBPS, auto-ack enabled, dynamic payloads enabled.
-bool NRF24_Init(spi_inst* spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin);
+bool NRF24_Init(spi_inst_t *spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin);
 
 // Writing pipe wrapper.
 void NRF24_OpenWritingPipe(uint8_t addr[6]);
