@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
+#include "hardware/gpio.h"
 #include <RF24.h>         // rf24 radio object
 #include "nrf24.h"
-#include "hardware/gpio.h"
 
 // NRF24 C WRAPPER: Used to call NRF24 common operations from C.
 // Expects to be in a project with RF24 included in target_link_libraries. Defined in main CMakeLists.txt
@@ -11,36 +11,42 @@
 RF24 radio; // instantiate an object for the RF24 transceiver
 
 
-// Return true if setup correctly
-// Defaults: 250KBPS, auto-ack enabled, dynamic payloads enabled, starts in listening mode.
-bool NRF24_Init(uint8_t address[2][6], uint8_t spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
-    if(spi_bus == 0) {
-        spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
-    }
-    else if(spi_bus == 1) {
-        spi.begin(spi1, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
-    }
-    else { return (false); } // Unknown SPI bus
-
+// Return TRUE if setup correctly.
+// Defaults: 250KBPS, dynamic payloads, and listening mode.
+bool NRF24_Init(spi_inst* spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin) {
+    spi.begin(spi0, sck_pin, tx_pin, rx_pin);        // Setup SPI bus
+ 
     if(radio.begin(&spi, ce_pin, csn_pin) == false) {     // Setup and configure rf radio
         return(false);
     }
     radio.setDataRate(RF24_250KBPS);        // Slow == more signal 
-    radio.setAutoAck(1);                    // Ensure ACK is enabled
-    radio.enableDynamicPayloads();          // Dynamic payloads are the way to go.
-    radio.openWritingPipe(address[1]);      // Both radios listen on the same pipes by default, and switch when writing
-    radio.openReadingPipe(1,address[0]);
+    radio.enableDynamicPayloads();          // Dynamic payloads are way to go.
     radio.startListening();    
     return(true);
 }
 
+// Writing pipe wrapper.
+void NRF24_OpenWritingPipe(uint8_t addr[6]) {
+    radio.openWritingPipe(addr);
+}
+
+// Reading pipe wrapper.
+void NRF24_OpenReadingPipe(uint8_t pipe_num, uint8_t addr[6]) {
+    radio.openReadingPipe(pipe_num, addr);
+}
+
 
 // Set payload size upto 32 bytes. Applies to non-dynamic length payloads.
-void NRF24_PayloadLength(uint8_t len) {
+void NRF24_SetStaticPayloadSize(uint8_t len) {
     radio.setPayloadSize(len);               
 }
 
-// Set ON/OFF dynamic payloads.
+// Grab static size for payloads.
+int NRF24_GetStaticPayloadSize() {
+    return(radio.getPayloadSize());               
+}
+
+// Enable/Disable dynamic payload sizes.
 void NRF24_DynamicPayloads(bool enabled) {
     if(enabled) {
         radio.enableDynamicPayloads();
@@ -51,31 +57,31 @@ void NRF24_DynamicPayloads(bool enabled) {
 
 }
 
+// Returns size of message in buffer to be read.
+int NRF24_GetDynamicPayloadSize() {
+    return(radio.getDynamicPayloadSize());
+}
+
 // True for acknowledgement packets.
-void NRF24_AckEnabled(bool enabled) {
-    radio.setAutoAck(enabled);
+void NRF24_AckEnabled(uint8_t pipe_num, bool enabled) {
+    radio.setAutoAck(pipe_num, enabled);
 }
 
-// Change num. retries allowed and time interval multiples of 250us
-void NRF24_NumberRetries(uint8_t count, uint8_t time_interval) {
+// Number of retries and time intervals between attempts. (multiples of 250us)
+void NRF24_NumberRetries(uint8_t time_interval, uint8_t count) {
     radio.setRetries(time_interval, count);               
-}
-
-// Allows for function to be inserted for call on IRQ falling
-void NRF24_SetupIRQ(uint8_t irq_pin, void (*irq_handler)(uint gpio, uint32_t event) ) {
-    radio.maskIRQ(1,1,0);
-    gpio_set_irq_enabled_with_callback(irq_pin, GPIO_IRQ_EDGE_FALL, true, irq_handler);
 }
 
 // Returns true if RX is available
 bool NRF24_HasNewData() {
-    return(radio.available());
+    bool new_data = radio.available();
+    return(new_data);
 }
 
 // Assumes stop-listen prior to run. Return true if ack_rec
 bool NRF24_SendData(uint8_t buffer[], uint8_t len) {
     bool ack_rec = radio.write(buffer, len);
-    return ack_rec;
+    return(ack_rec);
 }
 
 // Modifies buffer with RX data, only to be called if buffer contains waiting message.
@@ -83,18 +89,7 @@ bool NRF24_SendData(uint8_t buffer[], uint8_t len) {
 // or last byte will be padded until end of buffer.
 // More detail here: https://nrf24.github.io/RF24/classRF24.html#a8e2eacacfba96426c192066f04054c5b
 void NRF24_ReadData(uint8_t buffer[], uint8_t len) {
-    radio.read(buffer, len); // this clears the RX FIFO
-}
-
-// Returns true if new RX data available.
-bool NRF24_RxIRQ() {
-    bool tx_ok, tx_fail, rx_ready;      
-    radio.whatHappened(tx_ok, tx_fail, rx_ready); // get values for IRQ masks 
-
-    if(rx_ready == true) { // new rx data
-        return(true);
-    }
-    return(false);
+    radio.read(buffer, len);
 }
 
 // Start listening
