@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
-#include "hardware/spi.h"
 #include <RF24.h>         // rf24 radio object
 #include "nrf24.h"
 
@@ -69,6 +68,16 @@ void NRF24_AckEnabled(uint8_t pipe_num, bool enabled) {
     radio.setAutoAck(pipe_num, enabled);
 }
 
+// Toggle ACK payload ON. (global for all pipes?)
+void NRF24_EnableAckPayload() {
+    radio.enableAckPayload();
+}
+
+// Write buffer to specified pipe number.
+void NRF24_WriteAckPayload(uint8_t pipe, uint8_t buff[], uint8_t buff_len) {
+    radio.writeAckPayload(pipe, buff, buff_len);
+}
+
 // Number of retries and time intervals between attempts. (multiples of 250us)
 void NRF24_NumberRetries(uint8_t time_interval, uint8_t count) {
     radio.setRetries(time_interval, count);               
@@ -118,4 +127,3 @@ void NRF24_MaxPWR() {
 void NRF24_TestRadio() {
     radio.printDetails(); // Dump the configuration of the rf unit for debugging
 }
-
