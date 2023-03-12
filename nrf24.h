@@ -1,5 +1,5 @@
-#ifndef nrf24_pico_c_header
-#define nrf24_pico_c_header
+#ifndef RF24_PICO_WAPPER_HEADER
+#define RF24_PICO_WAPPER_HEADER
 
 #include "hardware/spi.h" // Needed to recognise spi_inst as a type.
 
@@ -9,8 +9,8 @@ extern "C"
 {
 #endif
 
-// Return TRUE if setup correctly
-// Defaults: 250KBPS, auto-ack enabled, dynamic payloads enabled.
+// Return TRUE if setup correctly.
+// Defaults: 250KBPS, dynamic payloads, and listening mode.
 bool NRF24_Init(spi_inst_t *spi_bus, uint8_t sck_pin, uint8_t tx_pin, uint8_t rx_pin, uint8_t ce_pin, uint8_t csn_pin);
 
 // Writing pipe wrapper.
@@ -23,24 +23,25 @@ void NRF24_OpenReadingPipe(uint8_t pipe_num, uint64_t addr);
 void NRF24_SetStaticPayloadSize(uint8_t len);
 
 // Grab static size for payloads.
-int NRF24_GetStaticPayloadSize();
+uint8_t NRF24_GetStaticPayloadSize();
 
 // Enable/Disable dynamic payload sizes.
-void NRF24_DynamicPayloads(bool enabled);
+void NRF24_DynPayloadEnabled(bool enabled);
 
 // Returns size of message in buffer to be read.
-int NRF24_GetDynamicPayloadSize();
+uint8_t NRF24_GetDynamicPayloadSize();
 
 // True for acknowledgement packets.
 void NRF24_AckEnabled(uint8_t pipe_num, bool enabled);
 
 // Toggle ACK payload ON. (global for all pipes?)
-void NRF24_EnableAckPayload();
+void NRF24_AckPayloadEnabled(bool enabled);
 
 // Write buffer to specified pipe number.
-void NRF24_WriteAckPayload(uint8_t pipe, uint8_t buff[], uint8_t buff_len);
+// Returns true if messaged placed in FIFO (to be sent as acknowledgement)
+bool NRF24_WriteAckPayload(uint8_t pipe, uint8_t buff[], uint8_t buff_len);
 
-// Number of retries and time intervals between attempts. (multiples of 250us)
+// Time intervals (x*250us... 1=250us, 2=500us...) of retries and number of attempts.
 void NRF24_NumberRetries(uint8_t time_interval, uint8_t count);
 
 // Returns true if RX is available
